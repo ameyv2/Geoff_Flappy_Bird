@@ -1,6 +1,7 @@
 package com.example.geoffflappybird;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -10,6 +11,9 @@ import android.graphics.Typeface;
 import android.media.MediaPlayer;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
+
+import java.net.Inet4Address;
 
 public class GeoffFlappyView extends View {
     private Bitmap geoff[] = new Bitmap[2];
@@ -25,7 +29,11 @@ public class GeoffFlappyView extends View {
     private int secondobsX, secondobsY, secondobsSpeed = 20;
     private Paint secondobsPaint = new Paint();
 
+    private int dangerX, dangerY, dangerSpeed = 30;
+    private Paint dangerPaint = new Paint();
+
     private int score;
+    private int lifeCounter;
 
     private boolean touch = false;
 
@@ -42,8 +50,14 @@ public class GeoffFlappyView extends View {
 
         background = BitmapFactory.decodeResource(getResources(), R.drawable.siebel);
 
-        obstaclePaint.setColor(Color.MAGENTA);
+        obstaclePaint.setColor(Color.GREEN);
         obstaclePaint.setAntiAlias(false);
+
+        secondobsPaint.setColor(Color.CYAN);
+        secondobsPaint.setAntiAlias(false);
+
+        dangerPaint.setColor(Color.RED);
+        dangerPaint.setAntiAlias(false);
 
         scorePaint.setColor(Color.WHITE);
         scorePaint.setTextSize(70);
@@ -55,6 +69,7 @@ public class GeoffFlappyView extends View {
 
         geoffY = 550;
         score = 0;
+        lifeCounter = 3;
 
     }
 
@@ -89,7 +104,7 @@ public class GeoffFlappyView extends View {
 
         if (hitObstacleChecker(obstacleX, obstacleY)) {
             score += 10;
-            obstacleX = - 100;
+            obstacleX = -100;
         }
 
         if (obstacleX < 0) {
@@ -97,13 +112,56 @@ public class GeoffFlappyView extends View {
             obstacleY = (int) Math.floor(Math.random() * (maxGeoffY - minGeoffY)) + minGeoffY;
         }
 
-        canvas.drawCircle(obstacleX, obstacleY, 25, obstaclePaint);
+        canvas.drawCircle(obstacleX, obstacleY, 40, obstaclePaint);
+
+        secondobsX = secondobsX - secondobsSpeed;
+
+        if (hitObstacleChecker(secondobsX, secondobsY)) {
+            score += 20;
+            secondobsX = -100;
+        }
+
+        if (secondobsX < 0) {
+            secondobsX = canvasWidth + 21;
+            secondobsY = (int) Math.floor(Math.random() * (maxGeoffY - minGeoffY)) + minGeoffY;
+        }
+
+        canvas.drawCircle(secondobsX, secondobsY, 25, secondobsPaint);
+
+        dangerX = dangerX - dangerSpeed;
+
+        if (hitObstacleChecker(dangerX, dangerY)) {
+            dangerX = -100;
+            lifeCounter--;
+            if (lifeCounter <= 0) {
+                Toast.makeText(getContext(), "Game Over", Toast.LENGTH_SHORT).show();
+
+                Intent gameOver = new Intent(getContext(), GameOverActivity.class);
+                gameOver.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                gameOver.putExtra("score", score);
+                getContext().startActivity(gameOver);
+            }
+        }
+
+        if (dangerX < 0) {
+            dangerX = canvasWidth + 21;
+            dangerY = (int) Math.floor(Math.random() * (maxGeoffY - minGeoffY)) + minGeoffY;
+        }
+
+        canvas.drawCircle(dangerX, dangerY, 30, dangerPaint);
 
         canvas.drawText("Score: " + score, 20, 60, scorePaint);
 
-        canvas.drawBitmap(lives[0], 780, 10, null);
-        canvas.drawBitmap(lives[0], 880, 10, null);
-        canvas.drawBitmap(lives[0], 980, 10, null);
+        for (int i = 0; i < 3; i++) {
+            int x = (int) (800 + lives[0].getWidth() * 1.5 * i);
+            int y = 10;
+
+            if (i < lifeCounter) {
+                canvas.drawBitmap(lives[0], x, y, null);
+            } else {
+                canvas.drawBitmap(lives[1], x, y, null);
+            }
+        }
 
     }
 
